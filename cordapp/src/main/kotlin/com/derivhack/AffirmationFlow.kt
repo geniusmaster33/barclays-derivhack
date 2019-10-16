@@ -45,7 +45,7 @@ class AffirmationFlow(val executionRef: String) : FlowLogic<SignedTransaction>()
     }
 }
 
-@InitiatedBy(AllocationFlow::class)
+@InitiatedBy(AffirmationFlow::class)
 class AffirmationFlowResponder(val flowSession: FlowSession) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
