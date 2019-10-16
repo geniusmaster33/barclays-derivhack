@@ -12,7 +12,7 @@ import net.corda.core.transactions.SignedTransaction
 
 @InitiatingFlow
 @StartableByRPC
-class ExecutionFlow(val executionJson: String) : FlowLogic<Unit>() {
+class ExecutionFlow(val executionJson: String) : FlowLogic<SignedTransaction>() {
 
     //TODO
     /**
@@ -27,7 +27,40 @@ class ExecutionFlow(val executionJson: String) : FlowLogic<Unit>() {
 
 
     @Suspendable
-    override fun call() {
+    override fun call(): SignedTransaction {
+        val event = parseEventFromJson(executionJson)
+        val notary = serviceHub.networkMapCache.notaryIdentities.first()
+        val cdmTransactionBuilder = CdmTransactionBuilder(notary, event, DefaultCdmVaultQuery(serviceHub))
+        cdmTransactionBuilder.verify(serviceHub)
+        val signedByMe = serviceHub.signInitialTransaction(cdmTransactionBuilder)
+
+        val counterPartySessions = cdmTransactionBuilder.getPartiesToSign().minus(ourIdentity).map { initiateFlow(it) }
+
+
+
+        val fullySignedTx = subFlow(CollectSignaturesFlow(signedByMe, counterPartySessions, CollectSignaturesFlow.tracker()))
+        val finalityTx = subFlow(FinalityFlow(fullySignedTx, counterPartySessions))
+
+
+        return finalityTx
 
     }
 }
+
+@InitiatedBy(ExecutionFlow::class)
+class TestFlowInitiated(val flowSession: FlowSession) : FlowLogic<SignedTransaction>() {
+
+    @Suspendable
+    override fun call(): SignedTransaction {
+        val signedTransactionFlow = object : SignTransactionFlow(flowSession) {
+            override fun checkTransaction(stx: SignedTransaction) = requireThat {
+            }
+        }
+
+        val signedId = subFlow(signedTransactionFlow)
+
+        return subFlow(ReceiveFinalityFlow(otherSideSession = flowSession, expectedTxId = signedId.id))
+    }
+}
+
+
