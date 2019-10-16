@@ -7,5 +7,7 @@ fun confirmationBuilderFromExecution(state : ExecutionState) : Confirmation {
 
     //TODO Add your code for building CDM Confirmation Object here*
 
+
+
     return Confirmation.ConfirmationBuilder().build()
 }

@@ -14,6 +14,7 @@ import net.corda.core.transactions.SignedTransaction
 @StartableByRPC
 class ExecutionFlow(val executionJson: String) : FlowLogic<SignedTransaction>() {
 
+    val validator = CdmValidators()
     //TODO
     /**
      *  You're expected to convert trades from CDM representation to work towards Corda by loading
@@ -29,6 +30,10 @@ class ExecutionFlow(val executionJson: String) : FlowLogic<SignedTransaction>() 
     @Suspendable
     override fun call(): SignedTransaction {
         val event = parseEventFromJson(executionJson)
+
+        //Validating the Event
+        validator.validateEvent(event).forEach { it -> if(!(it.isSuccess)) {ValidationUnsuccessfull(it.failureReason)} }
+
         val notary = serviceHub.networkMapCache.notaryIdentities.first()
         val cdmTransactionBuilder = CdmTransactionBuilder(notary, event, DefaultCdmVaultQuery(serviceHub))
         cdmTransactionBuilder.verify(serviceHub)
@@ -48,7 +53,7 @@ class ExecutionFlow(val executionJson: String) : FlowLogic<SignedTransaction>() 
 }
 
 @InitiatedBy(ExecutionFlow::class)
-class TestFlowInitiated(val flowSession: FlowSession) : FlowLogic<SignedTransaction>() {
+class ExecutionResponse(val flowSession: FlowSession) : FlowLogic<SignedTransaction>() {
 
     @Suspendable
     override fun call(): SignedTransaction {

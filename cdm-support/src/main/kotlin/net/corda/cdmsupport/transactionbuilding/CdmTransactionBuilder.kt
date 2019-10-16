@@ -2,10 +2,12 @@ package net.corda.cdmsupport.transactionbuilding
 
 import net.corda.cdmsupport.CDMEvent
 import net.corda.cdmsupport.ExecutionAlreadyExists
+import net.corda.cdmsupport.ValidationUnsuccessfull
 import net.corda.cdmsupport.eventparsing.serializeCdmObjectIntoJson
 import net.corda.cdmsupport.extensions.*
 import net.corda.cdmsupport.states.ExecutionState
 import net.corda.cdmsupport.states.TransferState
+import net.corda.cdmsupport.validators.CdmValidators
 import net.corda.cdmsupport.vaultquerying.CdmVaultQuery
 import net.corda.core.contracts.ContractClassName
 import net.corda.core.contracts.ContractState
@@ -22,7 +24,7 @@ class CdmTransactionBuilder(notary: Party? = null,
                             val cdmVaultQuery: CdmVaultQuery) : TransactionBuilder(notary) {
 
     val participantsFromInputs = mutableSetOf<AbstractParty>()
-
+    val validator = CdmValidators()
     init {
 
         event.primitive.allocation?.forEach { processAllocationPrimitive(it) }
@@ -62,10 +64,13 @@ class CdmTransactionBuilder(notary: Party? = null,
     }
 
     private fun processeExecutionPrimitive(executionPrimitive: ExecutionPrimitive) {
+        //Validating Execution Primitive
+        validator.validateExecutionPrimitive(executionPrimitive).forEach{ it -> if (!it.isSuccess) {ValidationUnsuccessfull(it.failureReason)}}
         if  (cdmVaultQuery.getExecutions().any { it.meta.globalKey == executionPrimitive.after.execution.meta.globalKey }) {
             throw ExecutionAlreadyExists(executionPrimitive.after.execution.meta.globalKey)
         }
-
+        //Validating Execution
+        validator.validateExecution(executionPrimitive.after.execution).forEach{ it -> if (!it.isSuccess) {ValidationUnsuccessfull(it.failureReason)}}
         val outputState = createExecutionState(executionPrimitive.after.execution)
         val outputIndex = addOutputStateReturnIndex(outputState, CDMEvent.ID)
         addCommand(CDMEvent.Commands.Execution(outputIndex), this.outputStates().flatMap { it.data.participants }.map { it.owningKey }.toSet().toList())

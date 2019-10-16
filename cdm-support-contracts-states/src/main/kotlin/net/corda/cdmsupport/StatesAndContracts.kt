@@ -2,7 +2,10 @@ package net.corda.cdmsupport
 
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.Contract
+import net.corda.core.contracts.requireThat
 import net.corda.core.transactions.LedgerTransaction
+
+
 import org.isda.cdm.Event
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -23,7 +26,15 @@ class CDMEvent : Contract {
     }
 
     override fun verify(tx: LedgerTransaction) {
-        // TODO: Write the verify logic.
+        val command = tx.commandsOfType(Commands::class.java).single()
+
+        if(command.value is Commands.Execution){
+            requireThat {
+
+            }
+        }
+
+
     }
 
 

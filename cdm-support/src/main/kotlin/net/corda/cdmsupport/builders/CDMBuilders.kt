@@ -446,6 +446,8 @@ open class CDMBuilders {
 
     }
 
+
+
     fun buildAllocationEvent(execution: List<Execution>, action: ActionEnum, eventDate: LocalDate, identifier: String, lineage: Lineage, issuerReference: Party, parties: MutableList<Party>, primitive: PrimitiveEvent): Event {
 
         //TODO

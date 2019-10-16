@@ -1,6 +1,8 @@
 package net.corda.cdmsupport
 
-class ValidationUnsuccessfull(message : String) : RuntimeException("Validation failed : $message")
+import java.util.*
+
+class ValidationUnsuccessfull(message: Optional<String>) : RuntimeException("Validation failed : $message")
 
 class ExecutionAlreadyExists(ref: String) : java.lang.RuntimeException("Execution with ref $ref already exists")
 class AllocatedTotalsNotMatch(beforeQuantity: String, allocatedQuantity: String) : RuntimeException("Allocated quantity not match - originalTrade : $beforeQuantity, allocated: $allocatedQuantity")

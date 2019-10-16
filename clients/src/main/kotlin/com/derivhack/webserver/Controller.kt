@@ -26,10 +26,14 @@ class Controller(rpc: NodeRPCConnection) {
 
     @PostMapping(value = ["/execution"])
     private fun execution(@RequestBody executionJson: String): String {
-
-        val tx = proxy.startFlowDynamic(ExecutionFlow::class.java, executionJson)
-
-        return "Transaction with id: ${tx.id} created"
+        var message = ""
+        message = try {
+            val tx = proxy.startFlowDynamic(ExecutionFlow::class.java, executionJson)
+            "Transaction with id: ${tx.id} created"
+        } catch (e: RuntimeException){
+            "Exception : " + e.message
+        }
+        return message
     }
 
     @PostMapping(value = ["/allocation"])
